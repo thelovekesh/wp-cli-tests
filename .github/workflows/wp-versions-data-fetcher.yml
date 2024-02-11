@@ -101,10 +101,12 @@ jobs:
 
       - name: Create Pull Request
         run: |
-          BODY="## Summary"
-          BODY+="\n\nUpdate WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
-          echo $BODY
-          BODY="${BODY//$'\n'/'%0A'}"
+          body="## Summary
+          Update WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
+          delimiter="${body//$'\n'/'%0A'}"
+          echo "body<<${delimiter}" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "${delimiter}" >> $GITHUB_OUTPUT
           gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts" || true
         env:
           GH_TOKEN: ${{ github.token }}
