@@ -77,9 +77,11 @@ jobs:
           if [ -n "$IS_MODIFIED" ]; then
             DIFF=$(git diff ${{ env.ARTIFACTS_BRANCH }} -- $FILE_PATH)
             echo "# Modified WP Versions Data" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>WP Versions Data Diff</summary>" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             echo "$DIFF" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
             echo "modified=true" >> $GITHUB_OUTPUT
           else
             echo "::notice::WP versions data has not been modified."
@@ -112,6 +114,6 @@ jobs:
           echo "body<<${delimiter}" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
           echo "${delimiter}" >> $GITHUB_OUTPUT
-          gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts" || true
+          gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$body" --label "scope:artifacts" || true
         env:
           GH_TOKEN: ${{ github.token }}
