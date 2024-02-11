@@ -97,15 +97,14 @@ jobs:
 
       - name: Push changes
         run: |
-          git push origin ${{ env.ARTIFACTS_BRANCH }}
+          git push origin ${{ env.FEATURE_BRANCH }}
 
       - name: Create Pull Request
-        if: steps.feature-branch-exists.outputs.exists == '0'
         run: |
           BODY="## Summary"
           BODY+="\n\nUpdate WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
           echo $BODY
           BODY="${BODY//$'\n'/'%0A'}"
-          gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts"
+          gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts" || true
         env:
           GH_TOKEN: ${{ github.token }}
