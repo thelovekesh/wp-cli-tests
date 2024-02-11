@@ -78,7 +78,8 @@ jobs:
             DIFF=$(git diff ${{ env.ARTIFACTS_BRANCH }} -- $FILE_PATH)
             echo "# Modified WP Versions Data" >> $GITHUB_STEP_SUMMARY
             echo "<details><summary>WP Versions Data Diff</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
             echo "$DIFF" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
@@ -109,7 +110,7 @@ jobs:
       - name: Create Pull Request
         run: |
           body="## Summary
-          Update WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
+          Update WP versions data file with the WordPress.org API `${WP_ORG_API_URL}`] response."
           delimiter="${body//$'\n'/'%0A'}"
           echo "body<<${delimiter}" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
