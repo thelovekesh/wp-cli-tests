@@ -1,0 +1,108 @@
+---
+name: WP Versions Data Fetcher
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      max_retries:
+        description: 'Max retries to fetch data from WPOrg API'
+        default: 3
+        required: false
+        type: number
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  ARTIFACTS_BRANCH: 'artifacts'
+  FEATURE_BRANCH: 'artifacts/update-wp-versions'
+  FILE_PATH: 'wp-versions.json'
+  MAX_RETRIES: ${{ inputs.max_retries || 3 }}
+  WP_ORG_API_URL: 'https://api.wordpress.org/core/stable-check/1.0/'
+
+jobs:
+  fetch-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          ref: ${{ env.ARTIFACTS_BRANCH }}
+
+      - name: Check if feature branch exists
+        id: feature-branch-exists
+        run: |
+          echo "exists=$([[ -z $(git ls-remote --heads origin ${{ env.FEATURE_BRANCH }}) ]] && echo "0" || echo "1")" >> $GITHUB_ENV
+
+      - name: Create feature branch
+        if: steps.feature-branch-exists.outputs.exists == '0'
+        run: |
+          git checkout -b ${{ env.FEATURE_BRANCH }}
+
+      - name: Checkout feature branch
+        if: steps.feature-branch-exists.outputs.exists == '1'
+        run: |
+          git fetch --all --prune
+          git checkout ${{ env.FEATURE_BRANCH }}
+          git pull --no-rebase
+
+      - name: Fetch WP Versions
+        run: |
+          BACKOFF=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Fetching WP versions, attempt $i"
+            curl -sL $WP_ORG_API_URL > $FILE_PATH && break
+            echo "Failed to fetch WP versions, attempt $i"
+            if [ $i -eq $MAX_RETRIES ]; then
+              echo "::error::Failed to fetch WP versions from $WP_ORG_API_URL after $MAX_RETRIES attempts"
+              exit 1
+            fi
+            sleep $BACKOFF
+            BACKOFF=$((BACKOFF * 2))
+          done
+
+      - name: Track modified files
+        run: |
+          IS_MODIFIED=$(git ls-files --modified wp-versions.json)
+          if [ -n "$IS_MODIFIED" ]; then
+            DIFF=$(git diff ${{ env.ARTIFACTS_BRANCH }} -- $FILE_PATH)
+            echo "# Modified WP Versions Data" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$DIFF" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::notice::WP versions data has not been modified."
+            exit 0
+          fi
+
+      - name: Set git user
+        run: |
+          # See: https://api.github.com/users/github-actions[bot]
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit WP Versions Data
+        run: |
+          git add $FILE_PATH
+          git commit -m "Update $FILE_PATH on $(date -u)" --signoff
+
+      - name: Push changes
+        run: |
+          git push origin ${{ env.ARTIFACTS_BRANCH }}
+
+      - name: Create Pull Request
+        if: steps.feature-branch-exists.outputs.exists == '0'
+        run: |
+          BODY="## Summary"
+          BODY+="\n\nUpdate WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
+          echo $BODY
+          BODY="${BODY//$'\n'/'%0A'}"
+          gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts"
