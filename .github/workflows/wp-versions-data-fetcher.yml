@@ -20,7 +20,7 @@ permissions: {}
 
 env:
   ARTIFACTS_BRANCH: 'artifacts'
-  FEATURE_BRANCH: 'artifacts/update-wp-versions'
+  FEATURE_BRANCH: 'sync-wp-versions'
   FILE_PATH: 'wp-versions.json'
   MAX_RETRIES: ${{ inputs.max_retries || 3 }}
   WP_ORG_API_URL: 'https://api.wordpress.org/core/stable-check/1.0/'
