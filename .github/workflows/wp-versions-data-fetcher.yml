@@ -110,7 +110,7 @@ jobs:
       - name: Create Pull Request
         run: |
           body="## Summary
-          Update WP versions data file with the WordPress.org API `${WP_ORG_API_URL}`] response."
+          Update WP versions data file with the WordPress.org API \`${WP_ORG_API_URL}\`] response."
           delimiter="${body//$'\n'/'%0A'}"
           echo "body<<${delimiter}" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
