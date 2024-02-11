@@ -106,3 +106,5 @@ jobs:
           echo $BODY
           BODY="${BODY//$'\n'/'%0A'}"
           gh pr create --base ${{ env.ARTIFACTS_BRANCH }} --head ${{ env.FEATURE_BRANCH }} --title "Update WP Versions Data" --body "$BODY" --label "scope:artifacts"
+        env:
+          GH_TOKEN: ${{ github.token }}
