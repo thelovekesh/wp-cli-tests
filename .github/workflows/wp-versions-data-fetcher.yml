@@ -105,7 +105,6 @@ jobs:
           git push origin ${{ env.FEATURE_BRANCH }}
 
       - name: Create Pull Request
-        if: steps.version-file.outputs.modified == 'true'
         run: |
           body="## Summary
           Update WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
