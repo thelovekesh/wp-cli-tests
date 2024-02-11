@@ -71,6 +71,7 @@ jobs:
           done
 
       - name: Track modified files
+        id: version-file
         run: |
           IS_MODIFIED=$(git ls-files --modified wp-versions.json)
           if [ -n "$IS_MODIFIED" ]; then
@@ -79,27 +80,32 @@ jobs:
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             echo "$DIFF" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "modified=true" >> $GITHUB_OUTPUT
           else
             echo "::notice::WP versions data has not been modified."
             exit 0
           fi
 
       - name: Set git user
+        if: steps.version-file.outputs.modified == 'true'
         run: |
           # See: https://api.github.com/users/github-actions[bot]
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Commit WP Versions Data
+        if: steps.version-file.outputs.modified == 'true'
         run: |
           git add $FILE_PATH
           git commit -m "Update $FILE_PATH on $(date -u)" --signoff
 
       - name: Push changes
+        if: steps.version-file.outputs.modified == 'true'
         run: |
           git push origin ${{ env.FEATURE_BRANCH }}
 
       - name: Create Pull Request
+        if: steps.version-file.outputs.modified == 'true'
         run: |
           body="## Summary
           Update WP versions data file with the WordPress.org API (endpoint)[${WP_ORG_API_URL}] response."
