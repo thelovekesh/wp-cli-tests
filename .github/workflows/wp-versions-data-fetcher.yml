@@ -60,7 +60,12 @@ jobs:
           BACKOFF=10
           for i in $(seq 1 $MAX_RETRIES); do
             echo "Fetching WP versions, attempt $i"
-            curl -sL $WP_ORG_API_URL > $FILE_PATH && break
+            RES_CODE=$(curl -sL -w "%{http_code}" $WP_ORG_API_URL -o /tmp/wp-versions.json)
+            if [ $RES_CODE -eq 200 ]; then
+              mv /tmp/wp-versions.json $FILE_PATH
+              echo "::notice::WP versions data has been fetched successfully."
+              break
+            fi
             echo "Failed to fetch WP versions, attempt $i"
             if [ $i -eq $MAX_RETRIES ]; then
               echo "::error::Failed to fetch WP versions from $WP_ORG_API_URL after $MAX_RETRIES attempts"
