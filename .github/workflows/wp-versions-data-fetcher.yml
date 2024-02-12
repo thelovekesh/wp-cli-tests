@@ -73,6 +73,7 @@ jobs:
             fi
             sleep $BACKOFF
             BACKOFF=$((BACKOFF * 2))
+            echo $BACKOFF
           done
 
       - name: Track modified files
